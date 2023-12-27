@@ -247,7 +247,7 @@ defineExpose({ onTreeReset });
           </span>
 
           <div class="absolute left-0 flex justify-center w-full !hidden data-node bg-red-800" :id="node.data.id">
-            <button class="flex-1 border-0 !bg-transparent !text-white !bg-gray-800 p-1" @click="cancelDelNode">取消</button>
+            <button class="flex-1 border-0 !text-white !bg-gray-800 p-1" @click="cancelDelNode">取消</button>
             <button class="flex-1 border-0 !bg-transparent !text-white p-1" @click="delNode">删除</button>
           </div>
         </span>
