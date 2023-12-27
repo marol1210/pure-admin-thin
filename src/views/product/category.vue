@@ -20,6 +20,8 @@ const props = defineProps({
   treeData: Array
 });
 
+let del_node = ref(false)
+
 function addNode(){
   tree_node.show = false
   if(! tree_node.name){
@@ -27,22 +29,56 @@ function addNode(){
   }
   http.post(
     '/api/pc',
-    {data:{'pid':tree_node.current_idx,name:tree_node.name}}
-  )
-  .then((res)=>{
-    if(res.msg=='ok'){
-      http.request("get","/api/pc").then((res)=>{
-        props.treeData.value = res.data
-      })
+    {data:{'pid':tree_node.current_node.data.id,name:tree_node.name}}
+  ).then((res)=>{
+    const newChild = { id: res.data.id, name: res.data.name, children: [] };
+    if(!tree_node.current_node.data.children){
+      tree_node.current_node.data.children = []
     }
+    tree_node.current_node.data.children.push(newChild)
+  })
+  .catch((res)=>{
+    alert('添加失败.')
   })
   tree_node.name = undefined
+}
+
+function delNodeConfirm(){
+  del_node.value=true
+  for(let e of document.getElementsByClassName('data-node')){
+    e.classList.add('!hidden')
+  }
+  document.getElementById(tree_node.current_node.data.id).classList.toggle("!hidden")
+}
+
+function delNode(){
+  return
+  http.request('delete',
+    '/api/pc',
+    {data:{'pid':tree_node.current_node.data.id,name:tree_node.name}}
+  ).then((res)=>{
+    cancelDelNode()
+    const newChild = { id: res.data.id, name: res.data.name, children: [] };
+    if(!tree_node.current_node.data.children){
+      tree_node.current_node.data.children = []
+    }
+    tree_node.current_node.data.children.push(newChild)
+  })
+  .catch((res)=>{
+    alert('添加失败.')
+  })
+}
+
+function cancelDelNode(){
+  for(let e of document.getElementsByClassName('data-node')){
+    e.classList.add('!hidden')
+  }
 }
 
 let tree_node = reactive({
   name:undefined,
   show:false,
-  current_idx:0
+  current_node:null
 })
 
 const emit = defineEmits(["tree-select"]);
@@ -112,6 +148,8 @@ watch(searchValue, val => {
 });
 
 defineExpose({ onTreeReset });
+
+
 </script>
 
 <template>
@@ -150,7 +188,6 @@ defineExpose({ onTreeReset });
                 :class="buttonClass"
                 link
                 type="primary"
-                :icon="useRenderIcon(isExpand ? ExpandIcon : UnExpandIcon)"
                 @click="toggleRowExpansionAll(isExpand ? false : true)"
               >
                 {{ isExpand ? "折叠全部" : "展开全部" }}
@@ -178,11 +215,9 @@ defineExpose({ onTreeReset });
           <el-button class="!bg-blue-600 !text-white" @click="addNode">确定</el-button>
           <el-button class="!bg-blue-600 !text-white" @click="tree_node.show=!tree_node.show">取消</el-button>
         </div>
-
       </div>
     </div>
     <el-divider class="!my-3 !w-full"/>
-    <el-button class="w-full !bg-blue-600 !text-white mb-3" @click="tree_node.show=true">添加</el-button>
     <el-tree
       ref="treeRef"
       :data="props.treeData"
@@ -195,51 +230,28 @@ defineExpose({ onTreeReset });
       @node-click="nodeClick"
     >
       <template #default="{ node, data }">
-        <span
-          :class="[
-            'pl-1',
-            'pr-1',
-            'rounded',
-            'flex',
-            'items-center',
-            'select-none',
-            'hover:text-primary',
-            searchValue.trim().length > 0 &&
-              node.label.includes(searchValue) &&
-              'text-red-500',
-            highlightMap[node.id]?.highlight ? 'dark:text-primary' : ''
-          ]"
-          :style="{
-            color: highlightMap[node.id]?.highlight
-              ? 'var(--el-color-primary)'
-              : '',
-            background: highlightMap[node.id]?.highlight
-              ? 'var(--el-color-primary-light-7)'
-              : 'transparent'
-          }"
-        >
-          <IconifyIconOffline
-            :icon="
-              data.type === 1
-                ? OfficeBuilding
-                : data.type === 2
-                  ? LocationCompany
-                  : Dept
-            "
-          />
-          {{ node.label }}
+        <span class="flex w-full justify-between items-center group">
+          <span>{{ node.label }}</span>
+          <span class="!hidden group-hover:!block mr-1">
+            <button
+              class="!text-gray-800 mr-2 bg-transparent font-bold text-base"
+              v-if="node.level<3"
+              @click="() => {tree_node.show=!tree_node.show;tree_node.current_node=node}">
+              +
+            </button>
+            <button
+              class="!text-gray-800 bg-transparent font-bold text-base"
+              @click="() => {tree_node.current_node=node ; delNodeConfirm() }">
+              -
+            </button>
+          </span>
+
+          <div class="absolute left-0 flex justify-center w-full !hidden data-node bg-red-800" :id="node.data.id">
+            <button class="flex-1 border-0 !bg-transparent !text-white !bg-gray-800 p-1" @click="cancelDelNode">取消</button>
+            <button class="flex-1 border-0 !bg-transparent !text-white p-1" @click="delNode">删除</button>
+          </div>
         </span>
-        <el-button @click.stop="" class="!flex add_node_btn !hidden !h-full absolute right-3">+</el-button>
       </template>
     </el-tree>
   </div>
 </template>
-
-<style>
-.el-tree-node__content,.el-tree-node__children{
-  position: relative;
-}
-.el-tree-node__content:hover > .add_node_btn, .el-tree-node__children:hover > .add_node_btn{
-  display: flex !important;
-}
-</style>

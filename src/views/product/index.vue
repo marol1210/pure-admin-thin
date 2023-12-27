@@ -7,7 +7,6 @@ let dataList = ref([])
 let columns = ref([])
 let treeData = ref([])
 
-
 onMounted(() => {
   http.request("get","/api/product").then((res)=>{
     dataList.value = res.data.list
