@@ -1,6 +1,7 @@
 import Cookies from "js-cookie";
 import { storageSession } from "@pureadmin/utils";
 import { useUserStoreHook } from "@/store/modules/user";
+import { http } from "@/utils/http";
 
 export interface DataInfo<T> {
   /** token */
@@ -10,9 +11,9 @@ export interface DataInfo<T> {
   /** 用于调用刷新accessToken的接口时所需的token */
   refreshToken: string;
   /** 用户名 */
-  username?: string;
+  username: string;
   /** 当前登陆用户的角色 */
-  roles?: Array<string>;
+  roles: Array<string>;
 }
 
 export const sessionKey = "user-info";
@@ -69,8 +70,13 @@ export function setToken(data: DataInfo<Date>) {
 
 /** 删除`token`以及key值为`user-info`的session信息 */
 export function removeToken() {
+  removeLaravelSession();
   Cookies.remove(TokenKey);
   sessionStorage.clear();
+}
+
+function removeLaravelSession(){
+  http.request('post','http://localhost:8080/logout')
 }
 
 /** 格式化token（jwt格式） */

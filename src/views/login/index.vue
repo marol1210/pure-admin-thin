@@ -17,6 +17,9 @@ import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
 import Lock from "@iconify-icons/ri/lock-fill";
 import User from "@iconify-icons/ri/user-3-fill";
+import {setToken} from "@/utils/auth";
+
+import { config as laravel} from "@/LaravelConfig";
 
 defineOptions({
   name: "Login"
@@ -33,7 +36,7 @@ dataThemeChange();
 const { title } = useNav();
 
 const ruleForm = reactive({
-  username: "admin",
+  username: "charlene.bernhard@example.org",
   password: "admin123"
 });
 
@@ -43,9 +46,37 @@ const onLogin = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       useUserStoreHook()
-        .loginByUsername({ username: ruleForm.username, password: "admin123" })
+        .loginByUsername({ username: ruleForm.username, password: ruleForm.password })
         .then(res => {
-          if (res.success) {
+          if(res.success) {
+            // 获取后端路由
+            initRouter().then(() => {
+              router.push(getTopMenu(true).path);
+              message("登录成功", { type: "success" });
+            });
+          }
+        });
+    } else {
+      loading.value = false;
+      return fields;
+    }
+  });
+};
+
+
+
+const onLaravelLogin = async (formEl: FormInstance | undefined) => {
+  loading.value = true;
+  if (!formEl) return;
+
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      useUserStoreHook()
+        .loginByLaravel(laravel ,{ email: ruleForm.username, password: ruleForm.password })
+        .then(res => {
+          if(res.two_factor!=undefined && res.two_factor === false){
+            setToken({username:ruleForm.username,expires: new Date(792389798325),roles:['admin'],accessToken:'aaaaaaaaa',refreshToken:'ddddddddddddddddd'})
+
             // 获取后端路由
             initRouter().then(() => {
               router.push(getTopMenu(true).path);
@@ -63,7 +94,8 @@ const onLogin = async (formEl: FormInstance | undefined) => {
 /** 使用公共函数，避免`removeEventListener`失效 */
 function onkeypress({ code }: KeyboardEvent) {
   if (code === "Enter") {
-    onLogin(ruleFormRef.value);
+    // onLogin(ruleFormRef.value);
+    onLaravelLogin(ruleFormRef.value);
   }
 }
 
@@ -103,7 +135,6 @@ onBeforeUnmount(() => {
           <el-form
             ref="ruleFormRef"
             :model="ruleForm"
-            :rules="loginRules"
             size="large"
           >
             <Motion :delay="100">
@@ -144,7 +175,7 @@ onBeforeUnmount(() => {
                 size="default"
                 type="primary"
                 :loading="loading"
-                @click="onLogin(ruleFormRef)"
+                @click="onLaravelLogin(ruleFormRef)"
               >
                 登录
               </el-button>
