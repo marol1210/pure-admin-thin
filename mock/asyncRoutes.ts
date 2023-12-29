@@ -35,6 +35,55 @@ const permissionRouter = {
   ]
 };
 
+const member = {
+  path: "/member",
+  meta: {
+    title: "用户管理",
+    icon: "lollipop",
+    rank: 10
+  },
+  children: [
+    {
+      path: "/member/fans",
+      name: "fansList",
+      component: 'member/fans_list',
+      meta: {
+        title: "粉丝列表",
+        roles: ["admin", "common"]
+      }
+    },
+    {
+      path: "/member/list",
+      name: "memberList",
+      component: 'member/member_list',
+      meta: {
+        title: "会员列表",
+        roles: ["admin", "common"]
+      }
+    }
+  ]
+} as RouteConfigsTable
+
+const product = {
+  path: "/product",
+  meta: {
+    title: "商品管理",
+    icon: "lollipop",
+    rank: 10
+  },
+  children: [
+    {
+      path: "/products",
+      component: "product/index",
+      name: "productList",
+      meta: {
+        title: "商品列表",
+        roles: ["admin", "common"]
+      }
+    }
+  ]
+} as RouteConfigsTable
+
 export default [
   {
     url: "/getAsyncRoutes",
@@ -42,7 +91,7 @@ export default [
     response: () => {
       return {
         success: true,
-        data: [permissionRouter]
+        data: [permissionRouter,member,product]
       };
     }
   }

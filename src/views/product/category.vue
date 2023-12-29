@@ -2,12 +2,16 @@
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { ref, computed, watch, getCurrentInstance,reactive } from "vue";
 import { http } from "@/utils/http";
+
 import Dept from "@iconify-icons/ri/git-branch-line";
 // import Reset from "@iconify-icons/ri/restart-line";
 import Search from "@iconify-icons/ep/search";
 import More2Fill from "@iconify-icons/ri/more-2-fill";
 import OfficeBuilding from "@iconify-icons/ep/office-building";
 import LocationCompany from "@iconify-icons/ep/add-location";
+import {message} from "@/utils/message";
+
+
 interface Tree {
   id: number;
   name: string;
@@ -52,17 +56,20 @@ function delNodeConfirm(){
 }
 
 function delNode(){
-  return
   http.request('delete',
-    '/api/pc',
-    {data:{'pid':tree_node.current_node.data.id,name:tree_node.name}}
+    '/api/pc/'+tree_node.current_node.data.id
   ).then((res)=>{
     cancelDelNode()
-    const newChild = { id: res.data.id, name: res.data.name, children: [] };
-    if(!tree_node.current_node.data.children){
-      tree_node.current_node.data.children = []
+    if(res.errcode == 0){
+      message('删除成功.',{type:'success'})
+
+      const parent = tree_node.current_node.parent;
+      const children = parent.data.children || parent.data;
+      const index = children.findIndex(d => d.id === tree_node.current_node.data.id);
+      children.splice(index, 1);
+    }else{
+      message('删除失败.',{type:'error'})
     }
-    tree_node.current_node.data.children.push(newChild)
   })
   .catch((res)=>{
     alert('添加失败.')
