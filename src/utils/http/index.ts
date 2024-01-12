@@ -61,6 +61,7 @@ class PureHttp {
   private httpInterceptorsRequest(): void {
     PureHttp.axiosInstance.defaults.withXSRFToken = true
     PureHttp.axiosInstance.defaults.withCredentials = true
+
     PureHttp.axiosInstance.interceptors.request.use(
       async (config: PureHttpRequestConfig): Promise<any> => {
         // 开启进度条动画

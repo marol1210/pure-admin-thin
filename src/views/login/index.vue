@@ -82,7 +82,11 @@ const onLaravelLogin = async (formEl: FormInstance | undefined) => {
               router.push(getTopMenu(true).path);
               message("登录成功", { type: "success" });
             });
+          }else {
+            message("登录失败", { type: "warning" });
           }
+        }).catch((err)=>{
+          message("登录失败:"+err.response.data.message, { type: "warning" });
         });
     } else {
       loading.value = false;
