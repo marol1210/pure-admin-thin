@@ -27,7 +27,10 @@ onMounted(() => {
     <el-table
         ref="table"
         :data="dataList"
-        @row-dblclick="function(row, column, event){ table.toggleRowExpansion(row) }"
+        @row-dblclick="function(row, column, event){
+            table.toggleRowExpansion(row)
+            table.toggleRowSelection(row,true)
+        }"
         highlight-current-row>
       <el-table-column type="expand">
         <template #default="props">
