@@ -165,7 +165,7 @@ defineExpose({ onTreeReset });
     class="h-full bg-bg_color overflow-auto relative"
     :style="{ minHeight: `calc(100vh - 133px)` }"
   >
-    <div class="flex items-center h-[34px]">
+    <div class="flex items-center h-[34px] flex-none">
       <el-input
         v-model="searchValue"
         class="ml-2"
@@ -200,17 +200,17 @@ defineExpose({ onTreeReset });
                 {{ isExpand ? "折叠全部" : "展开全部" }}
               </el-button>
             </el-dropdown-item>
-            <!-- <el-dropdown-item>
-              <el-button
-                :class="buttonClass"
-                link
-                type="primary"
-                :icon="useRenderIcon(Reset)"
-                @click="onTreeReset"
-              >
-                重置状态
-              </el-button>
-            </el-dropdown-item> -->
+<!--            <el-dropdown-item>-->
+<!--            <el-button-->
+<!--              :class="buttonClass"-->
+<!--              link-->
+<!--              type="primary"-->
+<!--              :icon="useRenderIcon(Reset)"-->
+<!--              @click="onTreeReset"-->
+<!--            >-->
+<!--              重置状态-->
+<!--            </el-button>-->
+<!--            </el-dropdown-item>-->
           </el-dropdown-menu>
         </template>
       </el-dropdown>

@@ -9,7 +9,6 @@ import { UserResult, RefreshTokenResult } from "@/api/user";
 import { useMultiTagsStoreHook } from "@/store/modules/multiTags";
 import { type DataInfo, setToken, removeToken, sessionKey } from "@/utils/auth";
 import {AdminConfig, doLogin, LoginData} from '@/laravel'
-import {http} from "@/utils/http";
 
 
 export const useUserStore = defineStore({
@@ -45,7 +44,6 @@ export const useUserStore = defineStore({
             });
       });
     },
-
     async loginByLaravel(cfg:AdminConfig,data:LoginData) {
       return new Promise<UserResult>((resolve, reject) => {
           doLogin(cfg,data).then((data => { resolve(data) })).catch((err) => reject(err))
