@@ -2,10 +2,13 @@
 import { ref, onMounted } from "vue";
 import { http } from "@/utils/http";
 import category from './category.vue'
+import ProductDetail from './components/ProductDetail.vue'
 
 let dataList = ref([])
 let columns = ref([])
 let treeData = ref([])
+
+const table = ref()
 
 onMounted(() => {
   http.request("get","/api/product").then((res)=>{
@@ -21,14 +24,14 @@ onMounted(() => {
 <template>
   <div class="flex justify-between">
     <category class="flex-none overflow-hidden mr-2" :treeData="treeData"></category>
-    <el-table :data="dataList" highlight-current-row>
+    <el-table
+        ref="table"
+        :data="dataList"
+        @row-dblclick="function(row, column, event){ table.toggleRowExpansion(row) }"
+        highlight-current-row>
       <el-table-column type="expand">
         <template #default="props">
-          <el-form label-position="left" inline class="demo-table-expand">
-            <el-form-item label="创建人">
-              <span>{{ props.row['creater_id'] }}</span>
-            </el-form-item>
-          </el-form>
+          <ProductDetail :row="props.row"/>
         </template>
       </el-table-column>
 
