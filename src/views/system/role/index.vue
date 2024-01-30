@@ -8,6 +8,14 @@ import AddFill from "@iconify-icons/ri/add-circle-line";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { addDialog } from "@/components/ReDialog";
 import editForm from "./form.vue";
+import * as laravel from "@/laravel";
+import { message } from "@/utils/message"
+
+import { http } from "@/utils/http";
+
+const roleApi: laravel.Api = {
+  url: "/api/role"
+}
 
 defineOptions({
   name: "SystemRole"
@@ -22,15 +30,51 @@ const form = reactive({
   code: "",
   status: ""
 });
+
 const dataList = ref([]);
+const table = ref()
 const loading = ref(true);
 const switchLoadMap = ref({});
-const pagination = reactive<PaginationProps>({
+let columns = ref([])
+
+let pagination = reactive({
   total: 0,
   pageSize: 10,
   currentPage: 1,
   background: true
 });
+
+onMounted(() => {
+  http.request("get",roleApi.url,{"params": {"pageSize":pagination.pageSize} }).then((res)=>{
+    dataList.value = res.data.list
+    columns.value = res.data.columns
+    pagination = reactive( res.data.paginator )
+  })
+})
+
+function handlerPageChange(page:number){
+  laravel.handlerPageChange(roleApi,page).then((res)=>{
+    pagination.currentPage=page
+    dataList.value = res.data.list
+    columns.value = res.data.columns
+  })
+}
+
+function handlerSizeChange(pageSize:number){
+  pagination.pageSize = pageSize
+  laravel.handlerSizeChange(roleApi,pageSize).then((res)=>{
+    dataList.value = res.data.list
+    columns.value = res.data.columns
+  })
+}
+
+function handleDelete(id:number){
+
+}
+
+function handleEdit(id:number){
+
+}
 
 /**
  * 重置表格
@@ -40,50 +84,7 @@ const resetForm = formEl => {
   formEl.resetFields();
 };
 
-/**
- * 表头
- */
-const columns: TableColumnList = [
-              {
-                label: "角色编号",
-                prop: "id",
-                minWidth: 100
-              },
-              {
-                label: "角色名称",
-                prop: "name",
-                minWidth: 120
-              },
-              {
-                label: "角色标识",
-                prop: "code",
-                minWidth: 150
-              },
-              {
-                label: "状态",
-                minWidth: 130
-              },
-            {
-              label: "备注",
-                prop: "remark",
-              minWidth: 150
-            },
-            {
-              label: "创建时间",
-                minWidth: 180,
-              prop: "createTime",
-              formatter: ({ createTime }) =>
-              dayjs(createTime).format("YYYY-MM-DD HH:mm:ss")
-            },
-            {
-              label: "操作",
-                fixed: "right",
-              width: 240,
-              slot: "operation"
-            }
-          ];
-
-function openDialog(title = "新增", row?: FormItemProps) {
+function openDialog(title = "新增", row?) {
   addDialog({
     title: `${title}角色`,
     props: {
@@ -100,7 +101,7 @@ function openDialog(title = "新增", row?: FormItemProps) {
     contentRenderer: () => h(editForm, { ref: formRef }),
     beforeSure: (done, { options }) => {
       const FormRef = formRef.value.getRef();
-      const curData = options.props.formInline as FormItemProps;
+      const curData = options.props.formInline;
       function chores() {
         message(`您${title}了角色名称为${curData.name}的这条数据`, {
           type: "success"
@@ -165,7 +166,6 @@ function openDialog(title = "新增", row?: FormItemProps) {
           type="primary"
           :icon="useRenderIcon('search')"
           :loading="loading"
-          @click="onSearch"
         >
           搜索
         </el-button>
@@ -174,8 +174,57 @@ function openDialog(title = "新增", row?: FormItemProps) {
         </el-button>
       </el-form-item>
     </el-form>
-    <el-table>
 
+    <el-table
+      ref="table"
+      :data="dataList"
+      @row-dblclick="function(row, column, event){
+            table.toggleRowExpansion(row)
+            table.toggleRowSelection(row,true)
+        }"
+      highlight-current-row
+    >
+      <el-table-column
+        :prop="column['prop']" v-for="(column,idx) in columns" :key="idx"
+        :label="column['label']"
+      >
+        <template #default="scope" v-if="column['prop'] == 'is_active'">
+<!--          <el-switch width="60" inline-prompt v-model="scope.row['is_active']" active-text="激活" inactive-text="禁用" />-->
+          <el-tag
+            :type="scope.row['is_active']?'success':'info'"
+          >
+            {{scope.row['is_active'] ? '已启用':'已禁用'}}
+          </el-tag>
+        </template>
+
+        <template #default="scope" v-if="column['prop'] == 'deleted_at'">
+          <el-tag
+            :type="scope.row['deleted_at'] ? 'danger' : 'success'"
+          >
+            {{scope.row['deleted_at'] ? '是':'否'}}
+          </el-tag>
+        </template>
+
+      </el-table-column>
+
+      <el-table-column label="操作">
+        <template #default="scope">
+          <el-button type="primary" :icon="useRenderIcon('ep-edit')"    circle  size="small"/>
+          <el-button type="danger"  :icon="useRenderIcon('ep-delete')"  circle  size="small"/>
+        </template>
+      </el-table-column>
+
+      <template #append="scope">
+        <div class="flex m-1 justify-end">
+          <el-pagination :small="true"
+                         :total="pagination.total"
+                         :page-sizes="[10, 20, 50, 100]"
+                         layout="total, sizes, prev, pager, next"
+                         @current-change="handlerPageChange"
+                         @size-change="handlerSizeChange"
+          />
+        </div>
+      </template>
     </el-table>
   </div>
 </template>
