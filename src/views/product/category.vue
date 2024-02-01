@@ -2,14 +2,12 @@
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { ref, computed, watch, getCurrentInstance,reactive } from "vue";
 import { http } from "@/utils/http";
-
 import Dept from "@iconify-icons/ri/git-branch-line";
-// import Reset from "@iconify-icons/ri/restart-line";
 import Search from "@iconify-icons/ep/search";
 import More2Fill from "@iconify-icons/ri/more-2-fill";
 import OfficeBuilding from "@iconify-icons/ep/office-building";
 import LocationCompany from "@iconify-icons/ep/add-location";
-import {message} from "@/utils/message";
+import { message } from "@/utils/message";
 
 
 interface Tree {
@@ -40,6 +38,7 @@ function addNode(){
       tree_node.current_node.data.children = []
     }
     tree_node.current_node.data.children.push(newChild)
+
   })
   .catch((res)=>{
     alert('添加失败.')
@@ -60,7 +59,7 @@ function delNode(){
     '/api/pc/'+tree_node.current_node.data.id
   ).then((res)=>{
     cancelDelNode()
-    if(res.errcode == 0){
+    if(res.code == 200){
       message('删除成功.',{type:'success'})
 
       const parent = tree_node.current_node.parent;
@@ -72,7 +71,7 @@ function delNode(){
     }
   })
   .catch((res)=>{
-    alert('添加失败.')
+    alert('删除失败.')
   })
 }
 
@@ -236,7 +235,7 @@ defineExpose({ onTreeReset });
       :filter-node-method="filterNode"
       @node-click="nodeClick"
     >
-      <template #default="{ node, data }">
+      <template #default="{ node, data }" >
         <span class="flex w-full justify-between items-center group">
           <span>{{ node.label }}</span>
           <span class="!hidden group-hover:!block mr-1">
@@ -247,6 +246,7 @@ defineExpose({ onTreeReset });
               +
             </button>
             <button
+              v-if="node.data.pid>0"
               class="!text-gray-800 bg-transparent font-bold text-base"
               @click="() => {tree_node.current_node=node ; delNodeConfirm() }">
               -

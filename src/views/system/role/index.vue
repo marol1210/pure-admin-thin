@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, h, toRaw } from "vue";
-import Delete from "@iconify-icons/ep/delete";
-import EditPen from "@iconify-icons/ep/edit-pen";
 import Refresh from "@iconify-icons/ep/refresh";
-import Menu from "@iconify-icons/ep/menu";
-import AddFill from "@iconify-icons/ri/add-circle-line";
+import Search from "@iconify-icons/ep/search";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { addDialog } from "@/components/ReDialog";
+import {addDialog, closeDialog} from "@/components/ReDialog";
 import editForm from "./form.vue";
 import * as laravel from "@/laravel";
 import { message } from "@/utils/message"
-
 import { http } from "@/utils/http";
+import { ElMessageBox } from 'element-plus'
+import {isFunction} from "@pureadmin/utils";
 
 const roleApi: laravel.Api = {
   url: "/api/role"
@@ -32,10 +30,11 @@ const form = reactive({
 });
 
 const dataList = ref([]);
+const DialogConfirm = ref(false);
 const table = ref()
-const loading = ref(true);
-const switchLoadMap = ref({});
-let columns = ref([])
+const loading = ref(false);
+let columns = ref([]);
+
 
 let pagination = reactive({
   total: 0,
@@ -52,6 +51,9 @@ onMounted(() => {
   })
 })
 
+/**
+ * 翻页
+ */
 function handlerPageChange(page:number){
   laravel.handlerPageChange(roleApi,page).then((res)=>{
     pagination.currentPage=page
@@ -60,6 +62,9 @@ function handlerPageChange(page:number){
   })
 }
 
+/**
+ * 修改每页条数
+ */
 function handlerSizeChange(pageSize:number){
   pagination.pageSize = pageSize
   laravel.handlerSizeChange(roleApi,pageSize).then((res)=>{
@@ -68,12 +73,57 @@ function handlerSizeChange(pageSize:number){
   })
 }
 
-function handleDelete(id:number){
+/**
+ * 激活
+ */
+function handleActive(row){
+  return () => new Promise((resolve) => {
+    ElMessageBox.confirm(
+      `是否${row.is_active ? '禁用' : '启用'} “${row.name}”?`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      }
+    )
+    .then(() => {
+      row.activing = true
+      http.request('put',"/api/role/"+row.id,{data:{is_active:!row.is_active}})
+        .then((res)=>{
+          row.activing = false;
+          message('修改成功');
+          return resolve(true)
+        })
+        .catch((err)=>{
+          row.activing = false;
+          return resolve(false)
+        });
+    })
+    .catch(() => {
 
+    })
+  })
 }
 
-function handleEdit(id:number){
-
+/**
+ * 删除（暂未使用）
+ */
+function handleDelete(row){
+  return  () => new Promise((resolve) => {
+    row.deleting = true
+    console.log(row)
+    http.request('put',"/api/role/"+row.id,{data:row})
+      .then((res)=>{
+        row.deleting = false;
+        resolve(true)
+        message('修改成功');
+      })
+      .catch((err)=>{
+        resolve(false)
+        row.deleting = false;
+      });
+  })
 }
 
 /**
@@ -90,8 +140,9 @@ function openDialog(title = "新增", row?) {
     props: {
       formInline: {
         name: row?.name ?? "",
-        code: row?.code ?? "",
-        remark: row?.remark ?? ""
+        title: row?.title ?? "",
+        remark: row?.remark ?? "",
+        isActive: row?.is_active ?? "",
       }
     },
     width: "40%",
@@ -121,7 +172,38 @@ function openDialog(title = "新增", row?) {
           }
         }
       });
-    }
+    },
+    footerButtons: [
+      {
+        label: "取消",
+        text: true,
+        bg: true,
+        btnClick: ({ dialog: { options, index } }) => {
+          const done = () =>
+            closeDialog(options, index, { command: "cancel" });
+          if (options?.beforeCancel && isFunction(options?.beforeCancel)) {
+            options.beforeCancel(done, { options, index });
+          } else {
+            done();
+          }
+        }
+      },
+      {
+        label: "确定",
+        type: "primary",
+        text: true,
+        bg: true,
+        btnClick: ({ dialog: { options, index } }) => {
+          const done = () =>
+            closeDialog(options, index, { command: "sure" });
+          if (options?.beforeSure && isFunction(options?.beforeSure)) {
+            options.beforeSure(done, { options, index });
+          } else {
+            done();
+          }
+        }
+      }
+    ]
   });
 }
 </script>
@@ -164,7 +246,7 @@ function openDialog(title = "新增", row?) {
       <el-form-item>
         <el-button
           type="primary"
-          :icon="useRenderIcon('search')"
+          :icon="useRenderIcon(Search)"
           :loading="loading"
         >
           搜索
@@ -178,39 +260,30 @@ function openDialog(title = "新增", row?) {
     <el-table
       ref="table"
       :data="dataList"
-      @row-dblclick="function(row, column, event){
-            table.toggleRowExpansion(row)
-            table.toggleRowSelection(row,true)
-        }"
       highlight-current-row
     >
       <el-table-column
-        :prop="column['prop']" v-for="(column,idx) in columns" :key="idx"
-        :label="column['label']"
-      >
-        <template #default="scope" v-if="column['prop'] == 'is_active'">
-<!--          <el-switch width="60" inline-prompt v-model="scope.row['is_active']" active-text="激活" inactive-text="禁用" />-->
-          <el-tag
-            :type="scope.row['is_active']?'success':'info'"
-          >
-            {{scope.row['is_active'] ? '已启用':'已禁用'}}
-          </el-tag>
-        </template>
+        :prop="column['prop']" v-for="(column,idx) in columns"
+        :key="idx"
+        :label="column['label']">
+          <template #default="scope" v-if="column['prop'] == 'is_active'">
+            <el-switch width="60" inline-prompt v-model="scope.row.is_active" active-text="激活" inactive-text="禁用"
 
-        <template #default="scope" v-if="column['prop'] == 'deleted_at'">
-          <el-tag
-            :type="scope.row['deleted_at'] ? 'danger' : 'success'"
-          >
-            {{scope.row['deleted_at'] ? '是':'否'}}
-          </el-tag>
-        </template>
+                       :loading="scope.row.activing == true"
+                       :before-change="handleActive(scope.row)"
+            />
+          </template>
 
+<!--          <template #default="scope" v-if="column['prop'] == 'deleted_at'">-->
+<!--            <el-switch width="70" inline-prompt v-model="scope.row.deleted_at" active-text="未删除" inactive-text="已删除"-->
+<!--                       :loading="scope.row.deleting == true"-->
+<!--                       :before-change="handleDelete(scope.row)"/>-->
+<!--          </template>-->
       </el-table-column>
 
-      <el-table-column label="操作">
-        <template #default="scope">
-          <el-button type="primary" :icon="useRenderIcon('ep-edit')"    circle  size="small"/>
-          <el-button type="danger"  :icon="useRenderIcon('ep-delete')"  circle  size="small"/>
+      <el-table-column fixed="right" label="操作">
+        <template #default="{row}">
+          <el-button type="primary" :icon="useRenderIcon('ep-edit')"  circle  size="small" @click="openDialog('修改', row)"/>
         </template>
       </el-table-column>
 
@@ -228,4 +301,3 @@ function openDialog(title = "新增", row?) {
     </el-table>
   </div>
 </template>
-

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref,reactive } from "vue";
 import { FormProps } from "./types.ts"
+import type { FormInstance, FormRules } from 'element-plus'
 
 const props = withDefaults(defineProps<FormProps>(),{
   formInline:{
@@ -10,11 +11,27 @@ const props = withDefaults(defineProps<FormProps>(),{
     isActive: false
   }
 })
+
 const ruleFormRef = ref();
 const newFormInline = ref(props.formInline);
+
 function getRef() {
   return ruleFormRef.value;
 }
+
+const rules = reactive<FormRules>({
+  title: [
+    { required: true, message: '角色名称必填', trigger: 'blur' },
+    { min: 3, max: 10, message: '长度3 - 10', trigger: 'blur' },
+  ],
+  name: [
+    { required: true, message: '角色标识必填', trigger: 'blur' },
+    { min: 3, max: 10, message: '长度3 - 10', trigger: 'blur' },
+  ],
+  remark: [
+    { min: 3, max: 50, message: '长度3 - 50', trigger: 'blur' },
+  ]
+})
 
 defineExpose({ getRef });
 </script>
@@ -23,8 +40,9 @@ defineExpose({ getRef });
   <el-form
     ref="ruleFormRef"
     :model="newFormInline"
-    :rules="formRules"
+    :rules="rules"
     label-width="82px"
+    status-icon
   >
     <el-form-item label="角色名称" prop="title">
       <el-input
