@@ -8,7 +8,7 @@ const props = withDefaults(defineProps<FormProps>(),{
     title: "",
     name: "",
     remark: "",
-    isActive: false
+    is_active: false
   }
 })
 
@@ -22,14 +22,14 @@ function getRef() {
 const rules = reactive<FormRules>({
   title: [
     { required: true, message: '角色名称必填', trigger: 'blur' },
-    { min: 3, max: 10, message: '长度3 - 10', trigger: 'blur' },
+    { min: 1, max: 10, message: '长度1 - 10', trigger: 'blur' },
   ],
   name: [
     { required: true, message: '角色标识必填', trigger: 'blur' },
-    { min: 3, max: 10, message: '长度3 - 10', trigger: 'blur' },
+    { min: 1, max: 10, message: '长度1 - 10', trigger: 'blur' },
   ],
   remark: [
-    { min: 3, max: 50, message: '长度3 - 50', trigger: 'blur' },
+    { min: 1, max: 100, message: '长度1 - 100', trigger: 'blur' },
   ]
 })
 
@@ -62,9 +62,9 @@ defineExpose({ getRef });
 
     <el-form-item label="是否激活">
       <el-switch
-        v-model="newFormInline.isActive"
+        v-model="newFormInline.is_active"
         placeholder="是否激活"
-        type="textarea"
+        type="boolean"
       />
     </el-form-item>
 

@@ -23,16 +23,18 @@ defineOptions({
  * 表单引用
  */
 const formRef = ref();
+const searchForm = ref();
 const form = reactive({
   name: "",
-  code: "",
-  status: ""
+  title: "",
+  is_active: "",
+  remark: ""
 });
 
 const dataList = ref([]);
 const DialogConfirm = ref(false);
-const table = ref()
 const loading = ref(false);
+const table = ref()
 let columns = ref([]);
 
 
@@ -89,7 +91,7 @@ function handleActive(row){
     )
     .then(() => {
       row.activing = true
-      http.request('put',"/api/role/"+row.id,{data:{is_active:!row.is_active}})
+      http.request('put',"/api/role/"+row.id,{data:{is_active:row.is_active ? 0 : 1}})
         .then((res)=>{
           row.activing = false;
           message('修改成功');
@@ -112,7 +114,6 @@ function handleActive(row){
 function handleDelete(row){
   return  () => new Promise((resolve) => {
     row.deleting = true
-    console.log(row)
     http.request('put',"/api/role/"+row.id,{data:row})
       .then((res)=>{
         row.deleting = false;
@@ -134,6 +135,11 @@ const resetForm = formEl => {
   formEl.resetFields();
 };
 
+
+function search(){
+  http.get(roleApi.url,{params:form}).then((res)=> dataList.value = res.data.list)
+}
+
 function openDialog(title = "新增", row?) {
   addDialog({
     title: `${title}角色`,
@@ -142,7 +148,7 @@ function openDialog(title = "新增", row?) {
         name: row?.name ?? "",
         title: row?.title ?? "",
         remark: row?.remark ?? "",
-        isActive: row?.is_active ?? "",
+        is_active: row?.is_active ?? "",
       }
     },
     width: "40%",
@@ -153,21 +159,24 @@ function openDialog(title = "新增", row?) {
     beforeSure: (done, { options }) => {
       const FormRef = formRef.value.getRef();
       const curData = options.props.formInline;
+
       function chores() {
         message(`您${title}了角色名称为${curData.name}的这条数据`, {
           type: "success"
         });
         done(); // 关闭弹框
+        window.location.reload()
       }
+
       FormRef.validate(valid => {
         if (valid) {
-          console.log("curData", curData);
           // 表单规则校验通过
           if (title === "新增") {
             // 实际开发先调用新增接口，再进行下面操作
             chores();
           } else {
             // 实际开发先调用修改接口，再进行下面操作
+            http.request('put',`${roleApi.url}/${row.id}`,{data:curData});
             chores();
           }
         }
@@ -211,36 +220,36 @@ function openDialog(title = "新增", row?) {
 <template>
   <div class="main">
     <el-form
-      ref="formRef"
+      ref="searchForm"
       :inline="true"
       :model="form"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px]"
     >
-      <el-form-item label="角色名称：" prop="name">
+      <el-form-item label="角色名称：" prop="title">
         <el-input
-          v-model="form.name"
+          v-model="form.title"
           placeholder="请输入角色名称"
           clearable
           class="!w-[180px]"
         />
       </el-form-item>
-      <el-form-item label="角色标识：" prop="code">
-        <el-input
-          v-model="form.code"
-          placeholder="请输入角色标识"
-          clearable
-          class="!w-[180px]"
-        />
-      </el-form-item>
-      <el-form-item label="状态：" prop="status">
+<!--      <el-form-item label="角色标识：" prop="code">-->
+<!--        <el-input-->
+<!--          v-model="form.code"-->
+<!--          placeholder="请输入角色标识"-->
+<!--          clearable-->
+<!--          class="!w-[180px]"-->
+<!--        />-->
+<!--      </el-form-item>-->
+      <el-form-item label="状态：" prop="is_active">
         <el-select
-          v-model="form.status"
+          v-model="form.is_active"
           placeholder="请选择状态"
           clearable
           class="!w-[180px]"
         >
-          <el-option label="已启用" value="1" />
-          <el-option label="已停用" value="0" />
+          <el-option label="启用" value="1" />
+          <el-option label="停用" value="0" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -248,10 +257,11 @@ function openDialog(title = "新增", row?) {
           type="primary"
           :icon="useRenderIcon(Search)"
           :loading="loading"
+          @click.prevent="search"
         >
           搜索
         </el-button>
-        <el-button :icon="useRenderIcon(Refresh)" @click="resetForm(formRef)">
+        <el-button :icon="useRenderIcon(Refresh)" @click="resetForm(searchForm)">
           重置
         </el-button>
       </el-form-item>
@@ -266,11 +276,12 @@ function openDialog(title = "新增", row?) {
         :prop="column['prop']" v-for="(column,idx) in columns"
         :key="idx"
         :label="column['label']">
-          <template #default="scope" v-if="column['prop'] == 'is_active'">
-            <el-switch width="60" inline-prompt v-model="scope.row.is_active" active-text="激活" inactive-text="禁用"
 
-                       :loading="scope.row.activing == true"
-                       :before-change="handleActive(scope.row)"
+          <template #default="{ row }" v-if="column['prop'] == 'is_active'">
+            <el-switch width="60" inline-prompt
+                       active-text="启用" inactive-text="停用"
+                       v-model="row.is_active"
+                       :before-change="handleActive(row)"
             />
           </template>
 
