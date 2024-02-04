@@ -6,7 +6,8 @@ interface FormItemProps {
   code: string;
   /** 备注 */
   remark: string;
-  isActive?: boolean
+  /** 停用 or 启用*/
+  is_active?: boolean
 }
 interface FormProps {
   formInline: FormItemProps;

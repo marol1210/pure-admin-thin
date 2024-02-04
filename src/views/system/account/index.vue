@@ -10,34 +10,28 @@ import * as laravel from "@/laravel";
 import { message } from "@/utils/message"
 import { http } from "@/utils/http";
 import { ElMessageBox } from 'element-plus'
-import {isFunction} from "@pureadmin/utils";
-
-const roleApi: laravel.Api = {
-  url: "/api/role"
-}
+import { isFunction } from "@pureadmin/utils";
 
 defineOptions({
-  name: "SystemRole"
+  name: "SystemUser"
 });
 
-/**
- * 表单引用
- */
-const formRef = ref();
-const searchForm = ref();
+const userApi: laravel.Api = {
+  url: "/api/account"
+}
+
 const form = reactive({
   name: "",
-  title: "",
-  is_active: "",
-  remark: ""
+  email: "",
+  is_active: ""
 });
-
+const searchForm = ref();
+const formRef = ref()
 const dataList = ref([]);
 const DialogConfirm = ref(false);
-const loading = ref(false);
 const table = ref()
+const loading = ref(false);
 let columns = ref([]);
-
 
 let pagination = reactive({
   total: 0,
@@ -45,7 +39,6 @@ let pagination = reactive({
   currentPage: 1,
   background: true
 });
-
 
 function formParams(){
   Object.assign(form, {"pageSize":pagination.pageSize,"page":pagination.currentPage})
@@ -57,7 +50,7 @@ function formParams(){
 function search(params?:any){
   formParams()
   const _params =  Object.assign(form, params)
-  return http.get(roleApi.url,{"params":_params})
+  return http.get(userApi.url,{"params":_params})
 }
 
 /**
@@ -75,6 +68,7 @@ function listFilter(){
     })
 }
 
+
 onMounted(() => {
   search()
     .then((res)=>{
@@ -87,13 +81,14 @@ onMounted(() => {
     })
 })
 
+
 /**
  * 翻页
  */
 function handlerPageChange(page:number){
   formParams()
   const _params =  Object.assign(form, {"page":page})
-  laravel.handlerPageChange(roleApi,_params).then((res)=>{
+  laravel.handlerPageChange(userApi,_params).then((res)=>{
     pagination = reactive(res.data.paginator)
     dataList.value = res.data.list
     columns.value = res.data.columns
@@ -106,7 +101,7 @@ function handlerPageChange(page:number){
 function handlerSizeChange(pageSize:number){
   formParams()
   const _params =  Object.assign(form, {"pageSize":pageSize})
-  laravel.handlerSizeChange(roleApi,_params).then((res)=>{
+  laravel.handlerSizeChange(userApi,_params).then((res)=>{
     dataList.value = res.data.list
     columns.value = res.data.columns
     pagination = reactive(res.data.paginator)
@@ -119,7 +114,7 @@ function handlerSizeChange(pageSize:number){
 function handleActive(row){
   return () => new Promise((resolve) => {
     ElMessageBox.confirm(
-      `是否${row.is_active ? '禁用' : '启用'} “${row.name}”?`,
+      `是否${row.is_active ? '禁用' : '启用'} “${row.email}”?`,
       '提示',
       {
         confirmButtonText: '确定',
@@ -127,22 +122,22 @@ function handleActive(row){
         type: 'info',
       }
     )
-    .then(() => {
-      row.activing = true
-      http.request('put',"/api/role/"+row.id,{data:{is_active:row.is_active ? 0 : 1}})
-        .then((res)=>{
-          row.activing = false;
-          message('修改成功',{type:'success'});
-          return resolve(true)
-        })
-        .catch((err)=>{
-          row.activing = false;
-          return resolve(false)
-        });
-    })
-    .catch(() => {
+      .then(() => {
+        row.activing = true
+        http.request('put',"/api/role/"+row.id,{data:{is_active:row.is_active ? 0 : 1}})
+          .then((res)=>{
+            row.activing = false;
+            message('修改成功',{type:'success'});
+            return resolve(true)
+          })
+          .catch((err)=>{
+            row.activing = false;
+            return resolve(false)
+          });
+      })
+      .catch(() => {
 
-    })
+      })
   })
 }
 
@@ -150,18 +145,18 @@ function handleActive(row){
  * 删除
  */
 function handleDelete(row){
-    ElMessageBox.confirm(
-      `是否删除角色 “${row.name}”?`,
-      '注意',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
+  ElMessageBox.confirm(
+    `是否删除账号 “${row.email}”?`,
+    '注意',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
     .then(() => {
       row.deleting = true
-      http.request('delete',"/api/role/"+row.id,{data:row})
+      http.request('delete',"/api/account/"+row.id,{data:row})
         .then((res)=>{
           row.deleting = false;
           message('删除成功',{type:'success'});
@@ -182,9 +177,9 @@ function handleDelete(row){
  */
 const resetForm = formEl => {
   if (!formEl) return;
-  formEl.resetFields();
-  listFilter()
-};
+  formEl.resetFields()
+  listFilter();
+}
 
 
 function openDialog(title = "新增", row?) {
@@ -193,8 +188,7 @@ function openDialog(title = "新增", row?) {
     props: {
       formInline: {
         name: row?.name ?? "",
-        title: row?.title ?? "",
-        remark: row?.remark ?? "",
+        email: row?.email ?? "",
         is_active: row?.is_active ?? false,
       }
     },
@@ -222,6 +216,7 @@ function openDialog(title = "新增", row?) {
           duration: 2500
         });
         done(); // 关闭弹框
+        listFilter()
       }
 
       FormRef.validate(valid => {
@@ -229,22 +224,22 @@ function openDialog(title = "新增", row?) {
           // 表单规则校验通过
           if (title === "新增") {
             // 实际开发先调用新增接口，再进行下面操作
-            http.post(`${roleApi.url}`,{data:curData})
-                .then((response) =>{
-                    if(response.code==200){
-                      chores()
-                    }
-                })
-                .catch((err) => chores_err())
+            http.post(`${userApi.url}`,{data:curData})
+              .then((response) =>{
+                if(response.code==200){
+                  chores()
+                }
+              })
+              .catch((err) => chores_err())
           } else {
             // 实际开发先调用修改接口，再进行下面操作
-            http.request('put',`${roleApi.url}/${row.id}`,{data:curData})
-                .then((response) =>{
-                  if(response.code==200) {
-                    chores()
-                  }
-                })
-                .catch((err) => chores_err())
+            http.request('put',`${userApi.url}/${row.id}`,{data:curData})
+              .then((response) =>{
+                if(response.code==200){
+                  chores()
+                }
+              })
+              .catch((err) => chores_err())
           }
         }
       });
@@ -292,7 +287,7 @@ function openDialog(title = "新增", row?) {
       :model="form"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px]"
     >
-      <el-form-item label="角色名称：" prop="title">
+      <el-form-item label="名称：" prop="name">
         <el-input
           v-model="form.title"
           placeholder="请输入角色名称"
@@ -300,14 +295,14 @@ function openDialog(title = "新增", row?) {
           class="!w-[180px]"
         />
       </el-form-item>
-<!--      <el-form-item label="角色标识：" prop="code">-->
-<!--        <el-input-->
-<!--          v-model="form.code"-->
-<!--          placeholder="请输入角色标识"-->
-<!--          clearable-->
-<!--          class="!w-[180px]"-->
-<!--        />-->
-<!--      </el-form-item>-->
+      <!--      <el-form-item label="角色标识：" prop="code">-->
+      <!--        <el-input-->
+      <!--          v-model="form.code"-->
+      <!--          placeholder="请输入角色标识"-->
+      <!--          clearable-->
+      <!--          class="!w-[180px]"-->
+      <!--        />-->
+      <!--      </el-form-item>-->
       <el-form-item label="状态：" prop="is_active">
         <el-select
           v-model="form.is_active"
@@ -337,31 +332,25 @@ function openDialog(title = "新增", row?) {
       ref="table"
       :data="dataList"
       class="mt-3"
+      highlight-current-row
     >
       <el-table-column
         :prop="column['prop']" v-for="(column,idx) in columns"
         :key="idx"
         :label="column['label']">
+        <template #default="scope" v-if="column['prop'] == 'is_active'">
+          <el-switch width="60" inline-prompt v-model="scope.row.is_active" active-text="启用" inactive-text="停用"
 
-          <template #default="{ row }" v-if="column['prop'] == 'is_active'">
-            <el-switch width="60" inline-prompt
-                       active-text="启用" inactive-text="停用"
-                       v-model="row.is_active"
-                       :before-change="handleActive(row)"
-            />
-          </template>
-
-<!--          <template #default="scope" v-if="column['prop'] == 'deleted_at'">-->
-<!--            <el-switch width="70" inline-prompt v-model="scope.row.deleted_at" active-text="未删除" inactive-text="已删除"-->
-<!--                       :loading="scope.row.deleting == true"-->
-<!--                       :before-change="handleDelete(scope.row)"/>-->
-<!--          </template>-->
+                     :loading="scope.row.activing == true"
+                     :before-change="handleActive(scope.row)"
+          />
+        </template>
       </el-table-column>
 
       <el-table-column fixed="right" label="操作">
         <template #default="{row}">
           <el-button type="primary" :icon="useRenderIcon('ep-edit')"  circle  size="small" @click="openDialog('修改', row)"/>
-          <el-button type="danger" :icon="useRenderIcon('ep-delete')"  circle  size="small" @click="handleDelete(row)"/>
+          <el-button type="danger"  :icon="useRenderIcon('ep-delete')"  circle  size="small" @click="handleDelete(row)"/>
         </template>
       </el-table-column>
 

@@ -46,11 +46,10 @@ export interface Api {
   error?: (err) => void;
 }
 
-export async function handlerPageChange(api: Api, page:number) : Promise<any> {
-  return http.request("get",api.url,{"params": {"page": page,"pageSize":pagination.pageSize} })
+export async function handlerPageChange(api: Api, params) : Promise<any> {
+  return http.request("get",api.url,{"params": params })
 }
 
-export async function handlerSizeChange(api: Api, pageSize:number) : Promise<any> {
-  pagination.pageSize = pageSize
-  return http.request("get",api.url,{"params": {"pageSize":pagination.pageSize} })
+export async function handlerSizeChange(api: Api, params) : Promise<any> {
+  return http.request("get",api.url,{"params": params })
 }

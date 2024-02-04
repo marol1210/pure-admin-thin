@@ -10,10 +10,10 @@ export default {
     {
       path: "/system/user",
       name: "UserManage",
-      component: () => import("@/views/system/user/index.vue"),
+      component: () => import("@/views/system/account/index.vue"),
       meta: {
         icon: "ep:user",
-        title: "用户管理"
+        title: "账号管理"
       }
     },
     {
