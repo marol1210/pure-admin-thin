@@ -1,29 +1,30 @@
 <script setup lang="ts">
-import Motion from "./utils/motion";
+
 import { useRouter } from "vue-router";
 import { message } from "@/utils/message";
-import { loginRules } from "./utils/rule";
 import { useNav } from "@/layout/hooks/useNav";
 import type { FormInstance } from "element-plus";
 import { useLayout } from "@/layout/hooks/useLayout";
 import { useUserStoreHook } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
-import { bg, avatar, illustration } from "./utils/static";
-import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { ref, reactive, toRaw, onMounted, onBeforeUnmount } from "vue";
 import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
-
+import { setToken } from "@/utils/auth";
 import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
 import Lock from "@iconify-icons/ri/lock-fill";
 import User from "@iconify-icons/ri/user-3-fill";
-import { setToken } from "@/utils/auth";
+import { loginRules } from "./utils/rule";
+import { bg, avatar, illustration } from "./utils/static";
+import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+import Motion from "./utils/motion";
 
-import { config as laravel} from "@/LaravelConfig";
+import { config as AdminConfig} from "@/LaravelConfig";
 
 defineOptions({
   name: "Login"
 });
+
 const router = useRouter();
 const loading = ref(false);
 const ruleFormRef = ref<FormInstance>();
@@ -36,8 +37,8 @@ dataThemeChange();
 const { title } = useNav();
 
 const ruleForm = reactive({
-  username: "charlene.bernhard@example.org",
-  password: "admin123"
+  username: "mzh1986love@sina.com",
+  password: "password123"
 });
 
 const onLogin = async (formEl: FormInstance | undefined) => {
@@ -63,8 +64,6 @@ const onLogin = async (formEl: FormInstance | undefined) => {
   });
 };
 
-
-
 const onLaravelLogin = async (formEl: FormInstance | undefined) => {
   loading.value = true;
   if (!formEl) return;
@@ -72,10 +71,18 @@ const onLaravelLogin = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       useUserStoreHook()
-        .loginByLaravel(laravel ,{ email: ruleForm.username, password: ruleForm.password })
+        .loginByLaravel(AdminConfig ,{ email: ruleForm.username, password: ruleForm.password })
         .then(res => {
           if(res.two_factor!=undefined && res.two_factor === false){
-            setToken({username:ruleForm.username,expires: new Date(792389798325),roles:['admin'],accessToken:'aaaaaaaaa',refreshToken:'ddddddddddddddddd'})
+            setToken(
+              {
+                username:ruleForm.username,
+                expires: 0,
+                roles:['admin'],
+                accessToken: 'true',
+                refreshToken: 'true'
+              }
+            )
 
             // 获取后端路由
             initRouter().then(() => {

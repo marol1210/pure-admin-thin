@@ -4,8 +4,14 @@ interface FormItemProps {
   name: string;
   /** 备注 */
   email: string;
+  /** 密码 */
+  password: string;
+  /** 密码 */
+  password_confirm: string;
   /** 停用 or 启用*/
-  is_active?: boolean
+  is_active?: boolean;
+  is_edit: false;
+  roles:[];
 }
 interface FormProps {
   formInline: FormItemProps;

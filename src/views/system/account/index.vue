@@ -31,6 +31,7 @@ const dataList = ref([]);
 const DialogConfirm = ref(false);
 const table = ref()
 const loading = ref(false);
+const roles = reactive([]);
 let columns = ref([]);
 
 let pagination = reactive({
@@ -69,7 +70,8 @@ function listFilter(){
 }
 
 
-onMounted(() => {
+function init(){
+  //列表
   search()
     .then((res)=>{
       dataList.value = res.data.list
@@ -79,6 +81,14 @@ onMounted(() => {
     .catch((err)=>{
       message(err)
     })
+}
+
+onMounted(() => {
+  init()
+
+  //角色选项
+  roles.push({value:"1",label:"管理员"})
+  roles.push({value:"2",label:"运营"})
 })
 
 
@@ -189,7 +199,11 @@ function openDialog(title = "新增", row?) {
       formInline: {
         name: row?.name ?? "",
         email: row?.email ?? "",
+        password: "",
+        password_confirm: "",
+        roles: roles,
         is_active: row?.is_active ?? false,
+        is_edit: title=='新增' ? false : true
       }
     },
     width: "40%",
@@ -199,10 +213,11 @@ function openDialog(title = "新增", row?) {
     contentRenderer: () => h(editForm, { ref: formRef }),
     beforeSure: (done, { options }) => {
       const FormRef = formRef.value.getRef();
-      const curData = options.props.formInline;
+      // const curData = options.props.formInline;
+      const curData = formRef.value.newFormInline;
 
       function chores() {
-        message(`您${title}了角色名称为${curData.name}的这条数据`, {
+        message(`${title}账号成功.`, {
           type: "success",
           duration: 2500
         });
@@ -210,9 +225,10 @@ function openDialog(title = "新增", row?) {
         listFilter()
       }
 
-      function chores_err() {
-        message(`您${title}了角色名称为${curData.name},未成功.`, {
-          type: "warning",
+      function chores_err(err) {
+        console.log(err)
+        message(`${title}失败.${err.response.data.message}`, {
+          type: "error",
           duration: 2500
         });
         done(); // 关闭弹框
@@ -230,7 +246,7 @@ function openDialog(title = "新增", row?) {
                   chores()
                 }
               })
-              .catch((err) => chores_err())
+              .catch((err) => chores_err(err))
           } else {
             // 实际开发先调用修改接口，再进行下面操作
             http.request('put',`${userApi.url}/${row.id}`,{data:curData})
@@ -239,7 +255,7 @@ function openDialog(title = "新增", row?) {
                   chores()
                 }
               })
-              .catch((err) => chores_err())
+              .catch((err) => chores_err(err))
           }
         }
       });
