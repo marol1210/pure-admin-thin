@@ -73,6 +73,15 @@ const product = {
   },
   children: [
     {
+      path: "/p_categorys",
+      component: "product/category/index",
+      name: "productCategory",
+      meta: {
+        title: "商品类别",
+        roles: ["admin", "common"]
+      }
+    },
+    {
       path: "/products",
       component: "product/index",
       name: "productList",

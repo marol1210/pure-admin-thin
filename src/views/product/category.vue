@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { ref, computed, watch, getCurrentInstance,reactive } from "vue";
+import {ref, computed, watch, getCurrentInstance, reactive, onMounted} from "vue";
 import { http } from "@/utils/http";
 import Dept from "@iconify-icons/ri/git-branch-line";
 import Search from "@iconify-icons/ep/search";
@@ -9,7 +9,6 @@ import OfficeBuilding from "@iconify-icons/ep/office-building";
 import LocationCompany from "@iconify-icons/ep/add-location";
 import { message } from "@/utils/message";
 
-
 interface Tree {
   id: number;
   name: string;
@@ -17,11 +16,7 @@ interface Tree {
   children?: Tree[];
 }
 
-const props = defineProps({
-  treeLoading: Boolean,
-  treeData: Array
-});
-
+let treeData = ref([])
 let del_node = ref(false)
 
 function addNode(){
@@ -156,11 +151,16 @@ watch(searchValue, val => {
 defineExpose({ onTreeReset });
 
 
+onMounted(() => {
+  http.request("get","/api/pc").then((res)=>{
+    treeData.value = res.data
+  })
+})
+
 </script>
 
 <template>
   <div
-    v-loading="props.treeLoading"
     class="h-full bg-bg_color overflow-auto relative"
     :style="{ minHeight: `calc(100vh - 133px)` }"
   >
@@ -226,7 +226,7 @@ defineExpose({ onTreeReset });
     <el-divider class="!my-3 !w-full"/>
     <el-tree
       ref="treeRef"
-      :data="props.treeData"
+      :data="treeData"
       node-key="id"
       size="small"
       :props="defaultProps"
@@ -236,26 +236,32 @@ defineExpose({ onTreeReset });
       @node-click="nodeClick"
     >
       <template #default="{ node, data }" >
-        <span class="flex w-full justify-between items-center group">
+        <span class="flex h-full w-full justify-between items-center group">
           <span>{{ node.label }}</span>
-          <span class="!hidden group-hover:!block mr-1">
-            <button
-              class="!text-gray-800 mr-2 bg-transparent font-bold text-base"
-              v-if="node.level<3"
-              @click="() => {tree_node.show=!tree_node.show;tree_node.current_node=node}">
-              +
-            </button>
-            <button
-              v-if="node.data.pid>0"
-              class="!text-gray-800 bg-transparent font-bold text-base"
-              @click="() => {tree_node.current_node=node ; delNodeConfirm() }">
-              -
-            </button>
+          <span class="!hidden group-hover:!block mr-1 z-40">
+            <el-button-group>
+              <el-button
+                text
+                type="primary"
+                size="small"
+                :icon="useRenderIcon('ep:plus')"
+                v-if="node.level<3"
+                @click="() => {tree_node.show=!tree_node.show;tree_node.current_node=node;}">
+              </el-button>
+              <el-button
+                text
+                type="danger"
+                size="small"
+                :icon="useRenderIcon('ep:minus')"
+                v-if="node.data.pid>0"
+                @click="(evt) => {tree_node.current_node=node; delNodeConfirm(); }">
+              </el-button>
+            </el-button-group>
           </span>
 
-          <div class="absolute left-0 flex justify-center w-full !hidden data-node bg-red-800" :id="node.data.id">
-            <button class="flex-1 border-0 !text-white !bg-gray-800 p-1" @click="cancelDelNode">取消</button>
-            <button class="flex-1 border-0 !bg-transparent !text-white p-1" @click="delNode">删除</button>
+          <div class="absolute left-0 flex justify-center w-full !hidden data-node z-50" :id="node.data.id">
+            <button class="flex-1 border-0 !text-white !bg-gray-800 py-0.5" @click="cancelDelNode">取消</button>
+            <button class="flex-1 border-0 !bg-red-800 !text-white py-0.5" @click="delNode">删除</button>
           </div>
         </span>
       </template>

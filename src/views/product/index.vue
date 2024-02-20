@@ -23,9 +23,9 @@ onMounted(() => {
     pagination = reactive( res.data.paginator )
   })
 
-  http.request("get","/api/pc").then((res)=>{
-    treeData.value = res.data
-  })
+  // http.request("get","/api/pc").then((res)=>{
+  //   treeData.value = res.data
+  // })
 })
 
 function handlerPageChange(page:number){
@@ -54,6 +54,7 @@ function handlerSizeChange(pageSize:number){
             table.toggleRowExpansion(row)
             table.toggleRowSelection(row,true)
         }"
+        table-layout="auto"
         highlight-current-row>
 
       <el-table-column type="expand">

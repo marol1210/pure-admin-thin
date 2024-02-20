@@ -86,7 +86,7 @@ function init(){
 onMounted(() => {
   init()
 
-  //角色选项
+  //角色选项 - 临时使用，需要动态获取
   roles.push({value:"1",label:"管理员"})
   roles.push({value:"2",label:"运营"})
 })
@@ -134,7 +134,7 @@ function handleActive(row){
     )
       .then(() => {
         row.activing = true
-        http.request('put',"/api/role/"+row.id,{data:{is_active:row.is_active ? 0 : 1}})
+        http.request('put',`${userApi.url}/${row.id}`,{data:{is_active:row.is_active ? 0 : 1}})
           .then((res)=>{
             row.activing = false;
             message('修改成功',{type:'success'});
@@ -166,7 +166,7 @@ function handleDelete(row){
   )
     .then(() => {
       row.deleting = true
-      http.request('delete',"/api/account/"+row.id,{data:row})
+      http.request('delete',`${userApi.url}/${row.id}`,{data:row})
         .then((res)=>{
           row.deleting = false;
           message('删除成功',{type:'success'});
@@ -194,7 +194,7 @@ const resetForm = formEl => {
 
 function openDialog(title = "新增", row?) {
   addDialog({
-    title: `${title}角色`,
+    title: `${title}账号`,
     props: {
       formInline: {
         name: row?.name ?? "",
